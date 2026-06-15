@@ -99,7 +99,3 @@ Tracks session state across turns: user profile, motivation trend, risk scores (
 Three lightweight trackers: AI fallback rate and per-path latency for the context engine, turn-level tone shift and smoothing rate for the tone engine, and wall-clock latency per pipeline stage.
 
 ---
-
-## License
-
-MIT
