@@ -35,13 +35,7 @@ cd ember_edge
 python ember_edge_web.py
 ```
 
-### 5. Switch brands without code changes
-
-```bash
-BRAND_CONFIG_PATH=path/to/brand_config.yaml python web_interface_universal.py
-```
-
-### 6. Run ablation evaluation
+### 5. Run ablation evaluation
 
 ```bash
 # Apex Stride
