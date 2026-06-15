@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ember & Edge - AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #2c1810 0%, #3d2817 50%, #2c1810 100%);
+            min-height: 100vh;
+            color: #1a1410;
+            padding: 20px;
+            background-attachment: fixed;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .header {
+            background: linear-gradient(135deg, rgba(28,20,16,0.95) 0%, rgba(40,30,24,0.95) 100%);
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            margin-bottom: 24px;
+            border: 1px solid rgba(139,92,46,0.3);
+            border-left: 4px solid #8b5c2e;
+        }
+        .header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 48px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #d4a574 0%, #8b5c2e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+        }
+        .header p {
+            font-size: 16px;
+            color: #c9a882;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+        
+        .tagline {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #8b5c2e 0%, #d4a574 100%);
+            color: #1c1410;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 12px;
+            letter-spacing: 1.5px;
+        }
+        
+        .chat-container {
+            background: linear-gradient(135deg, rgba(28,20,16,0.95) 0%, rgba(40,30,24,0.95) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 350px);
+            min-height: 500px;
+            border: 1px solid rgba(139,92,46,0.2);
+        }
+        
+        .chat-header {
+            padding: 24px 28px;
+            background: linear-gradient(135deg, #8b5c2e 0%, #d4a574 100%);
+            color: #1c1410;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 20px 20px 0 0;
+        }
+        .chat-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        
+        .chat-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .analysis-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: #1c1410;
+            font-weight: 600;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: rgba(28,20,16,0.3);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .toggle-switch.active {
+            background: #10b981;
+        }
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        .toggle-switch.active .toggle-slider { transform: translateX(24px); }
+        
+        .btn-clear {
+            padding: 10px 20px;
+            background: rgba(28,20,16,0.4);
+            border: 1px solid rgba(28,20,16,0.5);
+            border-radius: 10px;
+            font-size: 13px;
+            color: #1c1410;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-clear:hover { background: rgba(28,20,16,0.6); }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px;
+            background: linear-gradient(135deg, #3d2817 0%, #4a3420 100%);
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.4s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.user { align-items: flex-end; }
+        .message.assistant { align-items: flex-start; }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 16px 20px;
+            border-radius: 18px;
+            line-height: 1.7;
+            font-size: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #8b5c2e 0%, #d4a574 100%);
+            color: #1c1410;
+            font-weight: 500;
+            border-bottom-right-radius: 4px;
+        }
+        .message.assistant .message-bubble {
+            background: linear-gradient(135deg, #5a4232 0%, #6b5040 100%);
+            color: #f5e6d3;
+            border-bottom-left-radius: 4px;
+        }
+        .message-label {
+            font-size: 11px;
+            color: #c9a882;
+            margin-bottom: 8px;
+            padding: 0 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 16px 20px;
+            background: rgba(90,66,50,0.8);
+            border-radius: 18px;
+            max-width: 80px;
+        }
+        .typing-indicator.active { display: flex; gap: 6px; }
+        .typing-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #d4a574;
+            animation: typing 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-6px); }
+        }
+        
+        .chat-input-container {
+            padding: 20px 24px;
+            border-top: 1px solid rgba(139,92,46,0.2);
+            background: linear-gradient(135deg, #3d2817 0%, #4a3420 100%);
+            border-radius: 0 0 20px 20px;
+        }
+        .input-wrapper { display: flex; gap: 16px; align-items: flex-end; }
+        textarea {
+            flex: 1;
+            padding: 16px 20px;
+            border: 1px solid rgba(139,92,46,0.3);
+            border-radius: 16px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            background: rgba(28,20,16,0.4);
+            color: #f5e6d3;
+            transition: all 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #8b5c2e;
+            box-shadow: 0 0 0 3px rgba(139, 92, 46, 0.2);
+            background: rgba(28,20,16,0.6);
+        }
+        textarea::placeholder { color: #8b7355; }
+        
+        .btn-send {
+            background: linear-gradient(135deg, #8b5c2e 0%, #d4a574 100%);
+            color: #1c1410;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(139, 92, 46, 0.4);
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 46, 0.5);
+        }
+        .btn-send:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .sample-queries {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .sample-chip {
+            padding: 10px 18px;
+            background: rgba(90,66,50,0.5);
+            border: 1px solid rgba(139,92,46,0.3);
+            border-radius: 25px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            color: #f5e6d3;
+        }
+        .sample-chip:hover {
+            background: linear-gradient(135deg, #8b5c2e 0%, #d4a574 100%);
+            border-color: #8b5c2e;
+            color: #1c1410;
+            transform: translateY(-2px);
+        }
+        
+        .analysis-section {
+            background: linear-gradient(135deg, rgba(28,20,16,0.95) 0%, rgba(40,30,24,0.95) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(139,92,46,0.2);
+        }
+        .section-header {
+            padding: 22px 28px;
+            background: linear-gradient(135deg, #4a3420 0%, #5a4232 100%);
+            border-bottom: 1px solid rgba(139,92,46,0.2);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .section-header:hover { background: linear-gradient(135deg, #5a4232 0%, #6b5040 100%); }
+        .section-header h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: #d4a574;
+            letter-spacing: 1px;
+        }
+        .section-toggle {
+            font-size: 22px;
+            color: #8b5c2e;
+            transition: transform 0.3s;
+        }
+        .analysis-section.expanded .section-toggle { transform: rotate(180deg); }
+        .section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+        .analysis-section.expanded .section-content { max-height: 5000px; }
+        .section-body { padding: 28px; }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .response-card {
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .response-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+        .response-card.baseline {
+            background: linear-gradient(135deg, #4a3420 0%, #5a4232 100%);
+            border: 1px solid rgba(185,28,28,0.3);
+        }
+        .response-card.baseline::before {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+        .response-card.adaptive {
+            background: linear-gradient(135deg, #4a3420 0%, #5a4232 100%);
+            border: 1px solid rgba(139,92,46,0.3);
+        }
+        .response-card.adaptive::before {
+            background: linear-gradient(135deg, #8b5c2e 0%, #d4a574 100%);
+        }
+        .card-header {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(201,168,130,0.2);
+            letter-spacing: 0.5px;
+        }
+        .response-card.baseline .card-header { color: #fca5a5; }
+        .response-card.adaptive .card-header { color: #d4a574; }
+        .score-display {
+            font-size: 42px;
+            font-weight: 900;
+            text-align: center;
+            padding: 24px;
+            background: rgba(28,20,16,0.6);
+            border-radius: 16px;
+            margin: 20px 0;
+        }
+        .response-card.baseline .score-display {
+            background: rgba(220,38,38,0.2);
+            color: #fca5a5;
+        }
+        .response-card.adaptive .score-display {
+            background: rgba(139,92,46,0.2);
+            color: #d4a574;
+        }
+        
+        .metrics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: rgba(28,20,16,0.4);
+            border-radius: 12px;
+            font-size: 14px;
+            border: 1px solid rgba(201,168,130,0.2);
+        }
+        .metric-label {
+            color: #c9a882;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .metric-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(139,92,46,0.3);
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #d4a574;
+            text-transform: uppercase;
+        }
+        .metric-value { font-weight: 700; color: #f5e6d3; }
+        
+        .comparison-summary {
+            background: rgba(139,92,46,0.15);
+            border-left: 3px solid #8b5c2e;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(139,92,46,0.25);
+        }
+        .comparison-summary h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: #d4a574;
+            margin-bottom: 14px;
+        }
+        .comparison-summary p {
+            font-size: 14px;
+            line-height: 1.7;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+        }
+        
+        .detail-card {
+            background: linear-gradient(135deg, #3d2817 0%, #4a3420 100%);
+            border-radius: 14px;
+            padding: 20px;
+            margin-top: 18px;
+            border: 1px solid rgba(201,168,130,0.2);
+        }
+        .detail-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 17px;
+            font-weight: 600;
+            color: #d4a574;
+            margin-bottom: 16px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .detail-item {
+            background: rgba(28,20,16,0.4);
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(201,168,130,0.2);
+        }
+        .detail-item strong {
+            display: block;
+            font-size: 12px;
+            color: #8b5c2e;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .detail-item span {
+            font-size: 14px;
+            color: #f5e6d3;
+            line-height: 1.5;
+        }
+        
+        .winner-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .winner-badge.adaptive {
+            background: linear-gradient(135deg, #8b5c2e 0%, #d4a574 100%);
+            color: #1c1410;
+        }
+        .winner-badge.baseline {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            color: white;
+        }
+        .winner-badge.tie {
+            background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+            color: white;
+        }
+        
+        /* NEW: Performance table styling */
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        .performance-table th {
+            background: rgba(139,92,46,0.2);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #d4a574;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid rgba(139,92,46,0.3);
+        }
+        .performance-table td {
+            padding: 12px 16px;
+            color: #f5e6d3;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(201,168,130,0.1);
+        }
+        .performance-table tr:hover {
+            background: rgba(139,92,46,0.1);
+        }
+        .model-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: rgba(16,185,129,0.2);
+            color: #10b981;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .comparison-grid { grid-template-columns: 1fr; }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔪 EMBER & EDGE</h1>
+            <p>A Thinking Hand Beside Yours</p>
+            <span class="tagline">WHERE CRAFT MEETS KITCHEN</span>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2>
+                    <span class="status-indicator"></span>
+                    The Cutting Board
+                </h2>
+                <div class="chat-controls">
+                    <div class="analysis-toggle">
+                        <span>Show Analysis</span>
+                        <div class="toggle-switch active" id="analysisToggle">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                    <button class="btn-clear" onclick="clearChat()">Clear</button>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="message-label">Ember & Edge</div>
+                    <div class="message-bubble">
+                        Close your eyes. Picture the moment you need precision. What do you feel?
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="userInput" 
+                        placeholder="What are you cutting today?..."
+                        rows="1"
+                    ></textarea>
+                    <button class="btn-send" onclick="sendMessage()">Share</button>
+                </div>
+                <div class="sample-queries">
+                    <div class="sample-chip" onclick="fillQuery('Which knife for everyday cooking?')">Everyday Knife</div>
+                    <div class="sample-chip" onclick="fillQuery('My knife feels dull after 2 weeks')">Dull Knife</div>
+                    <div class="sample-chip" onclick="fillQuery('How to care for carbon steel?')">Carbon Care</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PERFORMANCE METRICS: ALWAYS SHOWN -->
+        <div id="performanceSection" class="analysis-section expanded">
+            <div class="section-header" onclick="toggleSection(this)">
+                <h3> Performance Metrics</h3>
+                <span class="section-toggle">▼</span>
+            </div>
+            <div class="section-content">
+                <div class="section-body" id="performanceMetrics">
+                    <p style="color: #c9a882; text-align: center; padding: 20px;">Send a message to see performance metrics...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ANALYSIS SECTIONS: SHOWN ONLY WHEN TOGGLE IS ON -->
+        <div id="analysisContainer" style="display: block;">
+            <div class="analysis-section expanded">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h3> Context Analysis</h3>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="section-body" id="contextAnalysis">
+                        <p style="color: #c9a882; text-align: center; padding: 20px;">Send a message to see context analysis...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="analysis-section expanded">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h3> Response Comparison</h3>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="section-body" id="responseComparison">
+                        <p style="color: #c9a882; text-align: center; padding: 20px;">Send a message to see comparison...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = Date.now().toString();
+        let showAnalysis = true;
+        
+        document.getElementById('analysisToggle').addEventListener('click', function() {
+            this.classList.toggle('active');
+            showAnalysis = !showAnalysis;
+            document.getElementById('analysisContainer').style.display = showAnalysis ? 'block' : 'none';
+        });
+        
+        function toggleSection(header) {
+            header.closest('.analysis-section').classList.toggle('expanded');
+        }
+        
+        function fillQuery(text) {
+            document.getElementById('userInput').value = text;
+            document.getElementById('userInput').focus();
+        }
+        
+        function clearChat() {
+            if (confirm('Clear and start fresh?')) {
+                sessionId = Date.now().toString();
+                document.getElementById('chatMessages').innerHTML = `
+                    <div class="message assistant">
+                        <div class="message-label">Ember & Edge</div>
+                        <div class="message-bubble">
+                            Close your eyes. Picture the moment you need precision. What do you feel?
+                        </div>
+                    </div>
+                `;
+                ['contextAnalysis', 'responseComparison', 'performanceMetrics'].forEach(id => {
+                    document.getElementById(id).innerHTML = '<p style="color: #c9a882; text-align: center; padding: 20px;">Send a message...</p>';
+                });
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            addMessage('user', message);
+            input.value = '';
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message assistant';
+            typingDiv.innerHTML = `
+                <div class="message-label">Ember & Edge</div>
+                <div class="typing-indicator active">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            document.getElementById('chatMessages').appendChild(typingDiv);
+            scrollToBottom();
+            
+            try {
+                const response = await fetch('/compare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, session_id: sessionId, show_analysis: showAnalysis })
+                });
+                const data = await response.json();
+                
+                typingDiv.remove();
+                
+                if (data.error) {
+                    addMessage('assistant', '❌ ' + data.error);
+                    return;
+                }
+                
+                if (data.is_gratitude) {
+                    addMessage('assistant', data.gratitude_response);
+                    updatePerformanceMetrics(data.performance);
+                    return;
+                }
+                
+                if (data.analysis_mode === false) {
+                    addMessage('assistant', data.adaptive_response);
+                    updatePerformanceMetrics(data.performance);
+                    return;
+                }
+                
+                addMessage('assistant', data.adaptive?.response || data.adaptive_response);
+                
+                // ALWAYS update performance metrics
+                updatePerformanceMetrics(data.performance);
+                
+                if (showAnalysis) {
+                    updateContextAnalysis(data.adaptive?.context || {});
+                    updateResponseComparison(data.comparison, data.baseline?.response, data.adaptive?.response);
+                }
+                
+            } catch (error) {
+                typingDiv.remove();
+                addMessage('assistant', '❌ Connection error. Please try again.');
+                console.error('Error:', error);
+            }
+        }
+        
+        function addMessage(role, content) {
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            const label = role === 'user' ? 'You' : 'Ember & Edge';
+            div.innerHTML = `
+                <div class="message-label">${label}</div>
+                <div class="message-bubble">${escapeHtml(content)}</div>
+            `;
+            document.getElementById('chatMessages').appendChild(div);
+            scrollToBottom();
+        }
+        
+        function updateContextAnalysis(context) {
+            const html = `
+                <div class="detail-card">
+                    <h4>Cook Profile</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <strong>Emotion</strong>
+                            <span>${escapeHtml(context.emotion || 'Neutral')}</span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Cook Type</strong>
+                            <span>${escapeHtml(context.cook_type || 'Home Cook')}</span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Knowledge</strong>
+                            <span>${escapeHtml(context.knife_knowledge || 'Intermediate')}</span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Intent</strong>
+                            <span>${escapeHtml(context.intent || 'Question')}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('contextAnalysis').innerHTML = html;
+        }
+        
+        function updateResponseComparison(comparison, baselineResp, adaptiveResp) {
+            if (!comparison) return;
+            
+            const metricInfo = {
+                'Brand_Authenticity': { 
+                    label: 'Brand Authenticity', 
+                    badge: '🔪 CORE',
+                    description: 'Patient chef-instructor voice, sensory language, teaching through experience'
+                },
+                'Context_Awareness': { 
+                    label: 'Context Awareness', 
+                    badge: '🎯 CORE',
+                    description: 'Recognizes emotion, intent, cook type, and urgency'
+                },
+                'Tone_Adaptation': { 
+                    label: 'Tone Adaptation', 
+                    badge: '✨ CORE',
+                    description: 'Poetry level, directness, and sensory language match the situation'
+                }
+            };
+            
+            const winner = comparison.actual_winner || 'Tie';
+            const improvement = comparison.improvement_percentage || 'N/A';
+            
+            let html = `
+                <div class="comparison-summary">
+                    <h3>Winner: <span class="winner-badge ${winner.toLowerCase()}">${winner}</span></h3>
+                    <p><strong>Improvement:</strong> ${escapeHtml(improvement)}</p>
+                    <p>${escapeHtml(comparison.reasoning || 'No reasoning provided.')}</p>
+                    ${comparison.key_differences ? `
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(139,92,46,0.2);">
+                            <strong>Key Differences:</strong>
+                            <ul style="margin: 8px 0 0 20px; color: #cbd5e1;">
+                                ${comparison.key_differences.map(diff => `<li style="margin: 4px 0;">${escapeHtml(diff)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="comparison-grid">
+                    <div class="response-card baseline">
+                        <div class="card-header"> Baseline Response </div>
+                        <div class="message-bubble" style="background: rgba(28,20,16,0.3); color: #f5e6d3; max-width: 100%; margin-bottom: 20px;">
+                            ${escapeHtml(baselineResp || 'No response')}
+                        </div>
+                        <div class="metrics-list">
+            `;
+            
+            Object.entries(comparison.baseline_scores || {}).forEach(([key, value]) => {
+                const info = metricInfo[key] || { label: key, badge: '', description: '' };
+                html += `
+                    <div class="metric-item" style="flex-direction: column; align-items: flex-start;">
+                        <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span class="metric-label">
+                                ${escapeHtml(info.label)}
+                                ${info.badge ? `<span class="metric-badge">${info.badge}</span>` : ''}
+                            </span>
+                            <span class="metric-value">${value}/5</span>
+                        </div>
+                        <span style="font-size: 11px; color: #8b7355; line-height: 1.4;">${escapeHtml(info.description)}</span>
+                    </div>
+                `;
+            });
+            
+            html += `
+                        </div>
+                    </div>
+                    
+                    <div class="response-card adaptive">
+                        <div class="card-header"> Ember & Edge Adaptive response </div>
+                        <div class="message-bubble" style="background: rgba(28,20,16,0.3); color: #f5e6d3; max-width: 100%; margin-bottom: 20px;">
+                            ${escapeHtml(adaptiveResp || 'No response')}
+                        </div>
+                        <div class="metrics-list">
+            `;
+            
+            Object.entries(comparison.adaptive_scores || {}).forEach(([key, value]) => {
+                const info = metricInfo[key] || { label: key, badge: '', description: '' };
+                html += `
+                    <div class="metric-item" style="flex-direction: column; align-items: flex-start;">
+                        <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span class="metric-label">
+                                ${escapeHtml(info.label)}
+                                ${info.badge ? `<span class="metric-badge">${info.badge}</span>` : ''}
+                            </span>
+                            <span class="metric-value">${value}/5</span>
+                        </div>
+                        <span style="font-size: 11px; color: #8b7355; line-height: 1.4;">${escapeHtml(info.description)}</span>
+                    </div>
+                `;
+            });
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('responseComparison').innerHTML = html;
+        }
+        
+        function updatePerformanceMetrics(performance) {
+            if (!performance) return;
+            
+            const steps = performance.steps || [];
+            const totalTime = performance.total_time || 0;
+            const totalTokens = performance.total_tokens || 0;
+            const totalApiCalls = performance.total_api_calls || 0;
+            
+            let html = `
+                <div class="detail-card">
+                    <h4>Overview</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <strong>Total Time</strong>
+                            <span>${totalTime.toFixed(3)}s</span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Total Tokens</strong>
+                            <span>${totalTokens.toLocaleString()}</span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Total API Calls</strong>
+                            <span>${totalApiCalls}</span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Total Steps</strong>
+                            <span>${steps.length}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-card">
+                    <h4>Step-by-Step Breakdown</h4>
+                    <table class="performance-table">
+                        <thead>
+                            <tr>
+                                <th>Step</th>
+                                <th>Model</th>
+                                <th>Tokens</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            steps.forEach(step => {
+                const isApiCall = step.tokens > 0;
+                const modelDisplay = isApiCall ? 
+                    `<span class="model-badge">${escapeHtml(step.model || 'N/A')}</span>` :
+                    `<span class="model-badge" style="background: rgba(100,116,139,0.2); color: #94a3b8;">${escapeHtml(step.model || 'N/A')}</span>`;
+                
+                html += `
+                    <tr>
+                        <td>${escapeHtml(step.name || 'Unknown')}</td>
+                        <td>${modelDisplay}</td>
+                        <td>${isApiCall ? (step.tokens || 0).toLocaleString() : '-'}</td>
+                        <td>${(step.time || 0).toFixed(3)}s</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            document.getElementById('performanceMetrics').innerHTML = html;
+        }
+        
+        function scrollToBottom() {
+            const messages = document.getElementById('chatMessages');
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        document.getElementById('userInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        document.getElementById('userInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+    </script>
+</body>
+</html>
