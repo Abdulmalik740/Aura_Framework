@@ -1,5 +1,5 @@
 """
-Ablation Framework — Ember & Edge — EMNLP 2026 Industry Track
+Ablation Framework — Ember & Edge 
 ==============================================================
 Rebuilds UniversalAdaptiveFramework with clean module separation.
 
