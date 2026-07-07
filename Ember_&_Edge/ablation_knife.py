@@ -1,5 +1,5 @@
 """
-ablation_runner.py — Ember & Edge — EMNLP 2026 Industry Track
+ablation_runner.py — Ember & Edge 
 """
 
 import os, json, time, argparse, math
