@@ -1,5 +1,5 @@
 """
-ablation_runner.py — EMNLP 2026 Industry Track
+ablation_runner.py 
 ===============================================
 Metrics:
   BV  — Brand Voice Score          (LLM-judged, gpt-5.1)
