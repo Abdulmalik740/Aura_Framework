@@ -1,5 +1,5 @@
 """
-Ablation Framework — EMNLP 2026 Industry Track
+Ablation Framework
 ================================================
 Rebuilds UniversalAdaptiveFramework with clean module separation.
 
